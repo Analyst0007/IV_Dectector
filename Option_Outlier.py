@@ -79,8 +79,8 @@ if uploaded_file is not None:
     data.columns = data.columns.str.strip()
 
     # Convert 'Date' and 'Expiry' columns to datetime format
-    data['Date'] = pd.to_datetime(data['Date'], format='%d-%b-%Y')
-    data['Expiry'] = pd.to_datetime(data['Expiry'], format='%d-%b-%Y')
+    data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
+    data['Expiry'] = pd.to_datetime(data['Expiry'], format='%Y-%m-%d')
 
     # Calculate time to expiration in years
     data['Time to Expiry'] = (data['Expiry'] - data['Date']).dt.days / 365.0
