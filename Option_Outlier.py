@@ -96,7 +96,7 @@ if uploaded_file is not None:
     # Check for significant changes in implied volatility
     data['Previous IV'] = data.groupby('Strike Price')['IV'].shift(1)
     data['IV Change'] = (data['IV'] - data['Previous IV']) / data['Previous IV']
-    data['Significant IV Change'] = data['IV Change'].apply(lambda x: 'Yes' if 0.01 <= abs(x) <= 0.05 else 'No')
+    data['Significant IV Change'] = data['IV Change'].apply(lambda x: 'Yes' if abs(x) > 0.05 else 'No')
 
     significant_iv_changes = data[data['Significant IV Change'] == 'Yes']
 
@@ -107,10 +107,10 @@ if uploaded_file is not None:
     # Visualization
     plt.figure(figsize=(10, 6))
     plt.plot(data['Date'], data['IV'], label='Implied Volatility', alpha=0.7)
-    plt.scatter(significant_iv_changes['Date'], significant_iv_changes['IV'], color='orange', label='Significant IV Change', zorder=5)
+    plt.scatter(significant_iv_changes['Date'], significant_iv_changes['IV'], color='red', label='Significant IV Change > 5%', zorder=5)
     plt.xlabel('Date')
     plt.ylabel('Implied Volatility')
-    plt.title('Implied Volatility with 1-5% Changes Highlighted')
+    plt.title('Implied Volatility with > 5% Changes Highlighted')
     plt.legend()
     plt.grid(True)
     st.pyplot(plt)
