@@ -110,7 +110,7 @@ if uploaded_file is not None:
             plt.scatter(significant_iv_changes['Date'], significant_iv_changes['IV'], color='orange', label='Significant IV Change', zorder=5)
             plt.xlabel('Date')
             plt.ylabel('Implied Volatility')
-            plt.title('Implied Volatility more than or equal to 5% Changes Highlighted')
+            plt.title('Implied Volatility with 1-5% Changes Highlighted')
             plt.legend()
             plt.grid(True)
             st.pyplot(plt)
