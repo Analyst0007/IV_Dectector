@@ -74,9 +74,9 @@ if uploaded_file is not None:
         # Strip extra spaces from column names
         data.columns = data.columns.str.strip()
 
-        # Convert 'Date' and 'Expiry' columns to datetime format
-        data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
-        data['Expiry'] = pd.to_datetime(data['Expiry'], errors='coerce')
+        # Convert 'Date' and 'Expiry' columns to datetime format with the correct format
+        data['Date'] = pd.to_datetime(data['Date'], format='%d-%b-%Y', errors='coerce')
+        data['Expiry'] = pd.to_datetime(data['Expiry'], format='%d-%b-%Y', errors='coerce')
 
         # Check for any parsing errors
         if data['Date'].isnull().any() or data['Expiry'].isnull().any():
@@ -110,7 +110,7 @@ if uploaded_file is not None:
             plt.scatter(significant_iv_changes['Date'], significant_iv_changes['IV'], color='orange', label='Significant IV Change', zorder=5)
             plt.xlabel('Date')
             plt.ylabel('Implied Volatility')
-            plt.title('Implied Volatility with 1-5% Changes Highlighted')
+            plt.title('Implied Volatility more than or equal to 5% Changes Highlighted')
             plt.legend()
             plt.grid(True)
             st.pyplot(plt)
