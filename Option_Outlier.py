@@ -79,52 +79,56 @@ if uploaded_file is not None:
     data.columns = data.columns.str.strip()
 
     # Convert 'Date' and 'Expiry' columns to datetime format
-    data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
-    data['Expiry'] = pd.to_datetime(data['Expiry'], format='%Y-%m-%d')
+    data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
+    data['Expiry'] = pd.to_datetime(data['Expiry'], errors='coerce')
 
-    # Calculate time to expiration in years
-    data['Time to Expiry'] = (data['Expiry'] - data['Date']).dt.days / 365.0
+    # Check for any parsing errors
+    if data['Date'].isnull().any() or data['Expiry'].isnull().any():
+        st.error("Error parsing dates. Please ensure the date format is correct.")
+    else:
+        # Calculate time to expiration in years
+        data['Time to Expiry'] = (data['Expiry'] - data['Date']).dt.days / 365.0
 
-    # Input for risk-free rate
-    risk_free_rate = st.number_input("Risk-free rate", value=0.07, format="%.2f")
+        # Input for risk-free rate
+        risk_free_rate = st.number_input("Risk-free rate", value=0.07, format="%.2f")
 
-    # Calculate implied volatility and Greeks
-    underlying_price = data['Underlying Value'].iloc[0]
-    data['Implied Volatility'] = data.apply(calculate_implied_volatility, axis=1, underlying_price=underlying_price, risk_free_rate=risk_free_rate)
-    data[['Delta', 'Gamma', 'Vega', 'Theta', 'Rho', 'IV']] = data.apply(calculate_greeks_and_iv, axis=1, underlying_price=underlying_price, risk_free_rate=risk_free_rate)
+        # Calculate implied volatility and Greeks
+        underlying_price = data['Underlying Value'].iloc[0]
+        data['Implied Volatility'] = data.apply(calculate_implied_volatility, axis=1, underlying_price=underlying_price, risk_free_rate=risk_free_rate)
+        data[['Delta', 'Gamma', 'Vega', 'Theta', 'Rho', 'IV']] = data.apply(calculate_greeks_and_iv, axis=1, underlying_price=underlying_price, risk_free_rate=risk_free_rate)
 
-    # Check for significant changes in implied volatility
-    data['Previous IV'] = data.groupby('Strike Price')['IV'].shift(1)
-    data['IV Change'] = (data['IV'] - data['Previous IV']) / data['Previous IV']
-    data['Significant IV Change'] = data['IV Change'].apply(lambda x: 'Yes' if abs(x) > 0.05 else 'No')
+        # Check for significant changes in implied volatility
+        data['Previous IV'] = data.groupby('Strike Price')['IV'].shift(1)
+        data['IV Change'] = (data['IV'] - data['Previous IV']) / data['Previous IV']
+        data['Significant IV Change'] = data['IV Change'].apply(lambda x: 'Yes' if abs(x) >= 0.05 else 'No')
 
-    significant_iv_changes = data[data['Significant IV Change'] == 'Yes']
+        significant_iv_changes = data[data['Significant IV Change'] == 'Yes']
 
-    # Display the table of significant IV changes
-    st.write("Significant IV Changes:")
-    st.write(significant_iv_changes[['Date', 'Strike Price', 'Option type', 'IV', 'Previous IV', 'IV Change']])
+        # Display the table of significant IV changes
+        st.write("Significant IV Changes:")
+        st.write(significant_iv_changes[['Date', 'Strike Price', 'Option type', 'IV', 'Previous IV', 'IV Change']])
 
-    # Visualization
-    plt.figure(figsize=(10, 6))
-    plt.plot(data['Date'], data['IV'], label='Implied Volatility', alpha=0.7)
-    plt.scatter(significant_iv_changes['Date'], significant_iv_changes['IV'], color='red', label='Significant IV Change > 5%', zorder=5)
-    plt.xlabel('Date')
-    plt.ylabel('Implied Volatility')
-    plt.title('Implied Volatility with > 5% Changes Highlighted')
-    plt.legend()
-    plt.grid(True)
-    st.pyplot(plt)
+        # Visualization
+        plt.figure(figsize=(10, 6))
+        plt.plot(data['Date'], data['IV'], label='Implied Volatility', alpha=0.7)
+        plt.scatter(significant_iv_changes['Date'], significant_iv_changes['IV'], color='orange', label='Significant IV Change', zorder=5)
+        plt.xlabel('Date')
+        plt.ylabel('Implied Volatility')
+        plt.title('Implied Volatility with 1-5% Changes Highlighted')
+        plt.legend()
+        plt.grid(True)
+        st.pyplot(plt)
 
-    # Save the DataFrame to a CSV file
-    output_file_path = 'options_data_with_greeks.csv'
-    data.to_csv(output_file_path, index=False)
-    st.success(f"DataFrame saved to {output_file_path}")
+        # Save the DataFrame to a CSV file
+        output_file_path = 'options_data_with_greeks.csv'
+        data.to_csv(output_file_path, index=False)
+        st.success(f"DataFrame saved to {output_file_path}")
 
-    # Provide a download link for the CSV file
-    with open(output_file_path, "rb") as file:
-        btn = st.download_button(
-            label="Download CSV",
-            data=file,
-            file_name="options_data_with_greeks.csv",
-            mime="text/csv"
-        )
+        # Provide a download link for the CSV file
+        with open(output_file_path, "rb") as file:
+            btn = st.download_button(
+                label="Download CSV",
+                data=file,
+                file_name="options_data_with_greeks.csv",
+                mime="text/csv"
+            )
